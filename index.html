@@ -272,7 +272,6 @@ html,body{width:100%;height:100%;font-family:'Trebuchet MS',Arial,sans-serif;bac
   border:none;border-radius:14px;padding:12px 30px;cursor:pointer;font-family:inherit;
 }
 
-/* ── HIDDEN CARDS ── */
 .hidden{display:none!important;}
 </style>
 </head>
@@ -316,7 +315,6 @@ html,body{width:100%;height:100%;font-family:'Trebuchet MS',Arial,sans-serif;bac
 
     <div id="panel">
 
-      <!-- Current player -->
       <div class="pcrd">
         <div class="pcrd-h">Tour de :</div>
         <div id="cur-row">
@@ -328,12 +326,10 @@ html,body{width:100%;height:100%;font-family:'Trebuchet MS',Arial,sans-serif;bac
         </div>
       </div>
 
-      <!-- Phase instruction -->
       <div class="pcrd">
         <div id="phase-txt">Lance le dé à 6 faces (physique), puis entre le résultat !</div>
       </div>
 
-      <!-- Number die input -->
       <div class="pcrd" id="numdie-card">
         <div class="pcrd-h">🎲 Résultat du dé (physique)</div>
         <div id="numbtns">
@@ -346,7 +342,6 @@ html,body{width:100%;height:100%;font-family:'Trebuchet MS',Arial,sans-serif;bac
         </div>
       </div>
 
-      <!-- Person die -->
       <div class="pcrd hidden" id="pdie-card">
         <div class="pcrd-h">🎲 Dé de personnes</div>
         <div id="pdie-wrap">
@@ -355,7 +350,6 @@ html,body{width:100%;height:100%;font-family:'Trebuchet MS',Arial,sans-serif;bac
         </div>
       </div>
 
-      <!-- Challenge -->
       <div class="pcrd hidden" id="chal-card">
         <div class="pcrd-h">💬 Défi — formule un ordre !</div>
         <div id="chal-verb">–</div>
@@ -371,7 +365,6 @@ html,body{width:100%;height:100%;font-family:'Trebuchet MS',Arial,sans-serif;bac
         </div>
       </div>
 
-      <!-- Autocorrection -->
       <div class="pcrd">
         <button id="autocor-btn" onclick="toggleAutocor()">📋 Fiche d'autocorrection ▾</button>
         <div id="autocor-tbl-wrap">
@@ -384,22 +377,20 @@ html,body{width:100%;height:100%;font-family:'Trebuchet MS',Arial,sans-serif;bac
         </div>
       </div>
 
-      <!-- QR Generator -->
       <div class="pcrd">
         <button id="qr-btn" onclick="toggleQR()">📱 Générer QR Code pour les élèves ▾</button>
         <div id="qr-box">
           <p style="color:rgba(255,255,255,.7);font-size:11px;margin-bottom:6px;">Colle l'URL où tu héberges ce fichier :</p>
-          <input id="qr-url-input" type="url" placeholder="https://ton-site.com/jeu.html">
+          <input id="qr-url-input" type="url" placeholder="https://klot79.github.io/imperatifspiel/">
           <button id="qr-generate-btn" onclick="generateQR()">Générer QR</button>
           <div id="qr-canvas" style="margin-top:8px;"></div>
         </div>
       </div>
 
-    </div><!-- /panel -->
-  </div><!-- /main -->
-</div><!-- /game -->
+    </div>
+  </div>
+</div>
 
-<!-- Win overlay -->
 <div id="win-overlay">
   <div id="win-card">
     <h1>🎉 Bravo !</h1>
@@ -408,13 +399,9 @@ html,body{width:100%;height:100%;font-family:'Trebuchet MS',Arial,sans-serif;bac
   </div>
 </div>
 
-<!-- QR Code lib -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
-// ══════════════════════════════════════════════════════════
-// DATA
-// ══════════════════════════════════════════════════════════
 const VERBS = {
   ajouter: {tu:'ajoute',  vous:'ajoutez'},
   aller:   {tu:'va',      vous:'allez'},
@@ -439,31 +426,20 @@ const VERBS = {
   tourner: {tu:'tourne',  vous:'tournez'},
   verser:  {tu:'verse',   vous:'versez'},
 };
-const VL = Object.keys(VERBS); // 22 verbs
+const VL = Object.keys(VERBS);
 
-// Board path: [col, row] in 7-col × 6-row grid, 0-indexed
-// Outer ring clockwise (START=0 at bottom-left), then inner ring, then FINISH
 const PATH = [
-  // OUTER bottom L→R  (row 5)
-  [0,5],[1,5],[2,5],[3,5],[4,5],[5,5],[6,5],   // 0–6
-  // OUTER right B→T   (col 6)
-  [6,4],[6,3],[6,2],[6,1],[6,0],               // 7–11
-  // OUTER top R→L     (row 0)
-  [5,0],[4,0],[3,0],[2,0],[1,0],[0,0],          // 12–17
-  // OUTER left T→B    (col 0)
-  [0,1],[0,2],[0,3],[0,4],                      // 18–21
-  // INNER bottom L→R  (row 4)
-  [1,4],[2,4],[3,4],[4,4],[5,4],               // 22–26
-  // INNER right B→T   (col 5)
-  [5,3],[5,2],[5,1],                            // 27–29
-  // INNER top R→L     (row 1)
-  [4,1],[3,1],[2,1],[1,1],                      // 30–33
-  // INNER left T→B    (col 1)
-  [1,2],[1,3],                                  // 34–35
-  // FINISH
-  [2,3],                                        // 36
+  [0,5],[1,5],[2,5],[3,5],[4,5],[5,5],[6,5],
+  [6,4],[6,3],[6,2],[6,1],[6,0],
+  [5,0],[4,0],[3,0],[2,0],[1,0],[0,0],
+  [0,1],[0,2],[0,3],[0,4],
+  [1,4],[2,4],[3,4],[4,4],[5,4],
+  [5,3],[5,2],[5,1],
+  [4,1],[3,1],[2,1],[1,1],
+  [1,2],[1,3],
+  [2,3],
 ];
-const NSQUARES = PATH.length; // 37
+const NSQUARES = PATH.length;
 
 function getVerb(i) {
   if (i === 0)          return 'START';
@@ -471,21 +447,12 @@ function getVerb(i) {
   return VL[(i - 1) % VL.length];
 }
 
-// ── Goose center area (empty decorative cells) ──
-// Cells not in PATH: [2,2],[3,2],[4,2],[3,3],[4,3] + center [3,2]
 const GOOSE_CELLS = new Set(['2,2','3,2','4,2','3,3','4,3']);
-
 const PCOLORS = ['#e84b4b','#3d85e0','#f5c518','#4caf50'];
 const PNAMES  = ['Joueur 1','Joueur 2','Joueur 3','Joueur 4'];
 
-// ══════════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════════
 let players = [], cur = 0, phase = 'roll-number', personRolled = null;
 
-// ══════════════════════════════════════════════════════════
-// SETUP LOGIC
-// ══════════════════════════════════════════════════════════
 function initPlayers() {
   players = [
     {name:'Joueur 1',pos:0,color:PCOLORS[0]},
@@ -496,8 +463,7 @@ initPlayers();
 renderSetup();
 
 function renderSetup() {
-  const el = document.getElementById('prows');
-  el.innerHTML = players.map((p,i) => `
+  document.getElementById('prows').innerHTML = players.map((p,i) => `
     <div class="prow">
       <div class="pdot" style="background:${p.color}"></div>
       <input class="pinput" type="text" value="${p.name}"
@@ -510,22 +476,14 @@ function removePlayer() { if(players.length>2){players.pop();renderSetup();} }
 function startGame() {
   cur = 0; phase = 'roll-number'; personRolled = null;
   players.forEach(p => p.pos = 0);
-  buildBoard();
-  buildTopbar();
-  buildAutocor();
-  updateUI();
+  buildBoard(); buildTopbar(); buildAutocor(); updateUI();
   document.getElementById('setup').classList.remove('active');
   document.getElementById('game').classList.add('active');
 }
 
-// ══════════════════════════════════════════════════════════
-// BOARD
-// ══════════════════════════════════════════════════════════
 function buildBoard() {
   const board = document.getElementById('board');
   board.innerHTML = '';
-
-  // Index path squares by "col,row"
   const sqMap = {};
   PATH.forEach(([c,r], i) => sqMap[`${c},${r}`] = i);
 
@@ -539,26 +497,17 @@ function buildBoard() {
       if (key in sqMap) {
         const i = sqMap[key];
         const verb = getVerb(i);
-        const isEven = (i % 2 === 0);
-        let cls = isEven ? 'sq-outer' : 'sq-inner';
+        let cls = (i % 2 === 0) ? 'sq-outer' : 'sq-inner';
         if (i === 0)           cls = 'sq-start';
         if (i === NSQUARES-1)  cls = 'sq-finish';
         div.className = `sq ${cls}`;
         div.id = `sq${i}`;
-
-        const label = verb === 'START'   ? '🚀<br>Départ'
-                    : verb === 'ARRIVÉE' ? '🏆<br>Arrivée'
-                    : verb;
+        const label = verb === 'START' ? '🚀<br>Départ' : verb === 'ARRIVÉE' ? '🏆<br>Arrivée' : verb;
         const fsize = verb.length > 8 ? '10px' : '12px';
-
-        div.innerHTML = `
-          <span class="sq-num">${i}</span>
-          <span class="sq-verb" style="font-size:${fsize}">${label}</span>
-          <div class="tklayer" id="tk${i}"></div>`;
+        div.innerHTML = `<span class="sq-num">${i}</span><span class="sq-verb" style="font-size:${fsize}">${label}</span><div class="tklayer" id="tk${i}"></div>`;
       } else if (GOOSE_CELLS.has(key)) {
-        // Goose center decoration
         div.className = 'sq sq-goose';
-        if (c === 3 && r === 2) div.textContent = '🦢'; // only one cell shows the emoji
+        if (c === 3 && r === 2) div.textContent = '🦢';
       } else {
         div.className = 'sq sq-blank';
       }
@@ -580,32 +529,18 @@ function renderTokens() {
       lay.appendChild(t);
     }
   });
-  // Highlight current player's square
   document.querySelectorAll('.sq.lit').forEach(el => el.classList.remove('lit'));
   const curSq = document.getElementById(`sq${players[cur].pos}`);
   if (curSq) curSq.classList.add('lit');
 }
 
-// ══════════════════════════════════════════════════════════
-// TOP BAR
-// ══════════════════════════════════════════════════════════
 function buildTopbar() {
   const tb = document.getElementById('topbar');
-  // Keep the title span, add badges
-  const existing = tb.querySelector('.topbar-title');
-  tb.innerHTML = '';
-  tb.appendChild(existing || (() => { const s = document.createElement('span'); s.className='topbar-title'; s.textContent='🦢 Jeu de l\'Oie'; return s; })());
-
+  tb.innerHTML = '<span class="topbar-title">🦢 Jeu de l\'Oie</span>';
   players.forEach((p, i) => {
     const d = document.createElement('div');
-    d.className = 'pbadge';
-    d.id = `badge${i}`;
-    d.innerHTML = `
-      <div class="bdot" style="background:${p.color}"></div>
-      <div>
-        <div class="bname">${p.name}</div>
-        <div class="bpos" id="bpos${i}">Case 0</div>
-      </div>`;
+    d.className = 'pbadge'; d.id = `badge${i}`;
+    d.innerHTML = `<div class="bdot" style="background:${p.color}"></div><div><div class="bname">${p.name}</div><div class="bpos" id="bpos${i}">Case 0</div></div>`;
     tb.appendChild(d);
   });
   updateBadges();
@@ -622,73 +557,45 @@ function updateBadges() {
   });
 }
 
-// ══════════════════════════════════════════════════════════
-// AUTOCORRECTION
-// ══════════════════════════════════════════════════════════
 function buildAutocor() {
-  const tbody = document.getElementById('acor-body');
-  tbody.innerHTML = VL.map(v =>
+  document.getElementById('acor-body').innerHTML = VL.map(v =>
     `<tr><td>${v}</td><td>${VERBS[v].tu}</td><td>${VERBS[v].vous}</td></tr>`
   ).join('');
 }
 function toggleAutocor() {
   const el = document.getElementById('autocor-tbl-wrap');
   el.classList.toggle('open');
-  const btn = document.getElementById('autocor-btn');
-  btn.textContent = el.classList.contains('open')
-    ? '📋 Fiche d\'autocorrection ▴'
-    : '📋 Fiche d\'autocorrection ▾';
+  document.getElementById('autocor-btn').textContent =
+    el.classList.contains('open') ? '📋 Fiche d\'autocorrection ▴' : '📋 Fiche d\'autocorrection ▾';
 }
 
-// ══════════════════════════════════════════════════════════
-// QR CODE
-// ══════════════════════════════════════════════════════════
-function toggleQR() {
-  const el = document.getElementById('qr-box');
-  el.classList.toggle('open');
-}
-let qrInstance = null;
+function toggleQR() { document.getElementById('qr-box').classList.toggle('open'); }
 function generateQR() {
   const url = document.getElementById('qr-url-input').value.trim();
   if (!url) { alert('Entre une URL d\'abord !'); return; }
-  const container = document.getElementById('qr-canvas');
-  container.innerHTML = '';
-  try {
-    qrInstance = new QRCode(container, {
-      text: url, width: 150, height: 150,
-      colorDark:'#000000', colorLight:'#ffffff',
-      correctLevel: QRCode.CorrectLevel.M
-    });
-  } catch(e) {
-    container.textContent = 'QRCode non disponible hors-ligne.';
-  }
+  const c = document.getElementById('qr-canvas');
+  c.innerHTML = '';
+  try { new QRCode(c, {text:url,width:150,height:150,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M}); }
+  catch(e) { c.textContent = 'QRCode non disponible hors-ligne.'; }
 }
 
-// ══════════════════════════════════════════════════════════
-// GAME LOGIC
-// ══════════════════════════════════════════════════════════
 function updateUI() {
   const p = players[cur];
   const verb = getVerb(p.pos);
-
-  // Current player header
   document.getElementById('cur-dot').style.background = p.color;
   document.getElementById('cur-name').textContent = p.name;
   document.getElementById('cur-square').textContent =
     (verb !== 'START' && verb !== 'ARRIVÉE') ? `Case ${p.pos} — ${verb}` : `Case ${p.pos}`;
 
-  // Show/hide cards
   document.getElementById('numdie-card').classList.toggle('hidden', phase !== 'roll-number');
   document.getElementById('pdie-card').classList.toggle('hidden',   phase !== 'roll-person');
   document.getElementById('chal-card').classList.toggle('hidden',   phase !== 'challenge');
 
-  // Phase text
   const ptxt = document.getElementById('phase-txt');
-  if (phase === 'roll-number') {
+  if (phase === 'roll-number')
     ptxt.textContent = `${p.name}, lance le dé physique (1-6) et entre le résultat !`;
-  } else if (phase === 'roll-person') {
+  else if (phase === 'roll-person') {
     ptxt.textContent = `Tu es sur "${verb}". Lance maintenant le dé de personnes !`;
-    // Reset person die
     document.getElementById('pdie-btn').textContent = '❓';
     document.getElementById('pdie-result').textContent = 'Appuie pour lancer !';
     personRolled = null;
@@ -696,7 +603,6 @@ function updateUI() {
     ptxt.textContent = 'Dis la phrase à voix haute, puis vérifie !';
     showChallenge();
   }
-
   updateBadges();
   renderTokens();
 }
@@ -706,12 +612,8 @@ function movePlayer(n) {
   const p = players[cur];
   p.pos = Math.min(p.pos + n, NSQUARES - 1);
   renderTokens();
-
   if (p.pos >= NSQUARES - 1) { showWin(p); return; }
-
-  const verb = getVerb(p.pos);
-  if (verb === 'START') { endTurn(); return; }
-
+  if (getVerb(p.pos) === 'START') { endTurn(); return; }
   phase = 'roll-person';
   updateUI();
 }
@@ -721,8 +623,6 @@ function rollPersonDie() {
   const btn = document.getElementById('pdie-btn');
   btn.classList.add('spin');
   setTimeout(() => btn.classList.remove('spin'), 560);
-
-  // Animate flicker
   let ticks = 0;
   const faces = ['👤','👥'];
   const flicker = setInterval(() => {
@@ -748,8 +648,6 @@ function showChallenge() {
     personRolled === 'tu'
       ? '👤 <b>Singulier (tu)</b> — donne un ordre à <b>une</b> personne !'
       : '👥 <b>Pluriel (vous)</b> — donne un ordre à <b>plusieurs</b> personnes !';
-
-  // Reset answer area
   document.getElementById('answer-box').style.display = 'none';
   document.getElementById('judge-row').style.display = 'none';
   document.getElementById('reveal-btn').style.display = 'block';
@@ -760,12 +658,9 @@ function revealAnswer() {
   const data = VERBS[verb];
   if (!data) return;
   const form = personRolled === 'tu' ? data.tu : data.vous;
-  const eg = personRolled === 'tu'
-    ? `Ex. : « ${form} la porte ! »`
-    : `Ex. : « ${form} vos cahiers ! »`;
-
   document.getElementById('answer-txt').textContent = form + ' …!';
-  document.getElementById('answer-sub').textContent = eg;
+  document.getElementById('answer-sub').textContent =
+    personRolled === 'tu' ? `Ex. : « ${form} la porte ! »` : `Ex. : « ${form} vos cahiers ! »`;
   document.getElementById('answer-box').style.display = 'block';
   document.getElementById('judge-row').style.display = 'flex';
   document.getElementById('reveal-btn').style.display = 'none';
