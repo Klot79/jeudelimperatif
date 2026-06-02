@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🦢 Jeu de l'Oie — L'Impératif</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;font-family:'Trebuchet MS',Arial,sans-serif;background:#0d8a7a;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+
+/* ── SCREENS ── */
+.screen{position:fixed;inset:0;display:none;}
+.screen.active{display:flex;}
+
+/* ══════════════════════════════════════════════
+   SETUP SCREEN
+══════════════════════════════════════════════ */
+#setup{
+  flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(150deg,#0ab89e 0%,#0a6b60 100%);
+  gap:18px;padding:24px;
+}
+#setup h1{color:#fff;font-size:34px;text-shadow:0 2px 10px rgba(0,0,0,.4);text-align:center;}
+#setup h1 .goose{font-size:52px;display:block;margin-bottom:4px;}
+.card{
+  background:rgba(255,255,255,.15);border-radius:20px;padding:18px 24px;
+  width:400px;backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.25);
+}
+.card h2{color:#fff;font-size:16px;margin-bottom:12px;opacity:.85;text-transform:uppercase;letter-spacing:1px;}
+.prow{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.pdot{width:30px;height:30px;border-radius:50%;flex-shrink:0;border:3px solid rgba(255,255,255,.7);}
+.pinput{
+  flex:1;padding:8px 12px;border-radius:10px;
+  border:2px solid rgba(255,255,255,.35);background:rgba(255,255,255,.2);
+  color:#fff;font-size:15px;font-family:inherit;
+}
+.pinput::placeholder{color:rgba(255,255,255,.45);}
+.pinput:focus{outline:none;border-color:#fff;}
+.ptoggle-row{display:flex;justify-content:space-between;margin-top:6px;}
+.ptoggle{
+  padding:7px 16px;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.35);
+  border-radius:10px;color:#fff;font-size:14px;cursor:pointer;font-family:inherit;
+  transition:background .15s;
+}
+.ptoggle:active{background:rgba(255,255,255,.35);}
+.rules-card{font-size:13px;color:rgba(255,255,255,.88);line-height:1.6;}
+.rules-card b{color:#fff;}
+.btn-start{
+  background:#f8c430;color:#3a2000;font-weight:bold;font-size:20px;
+  border:none;border-radius:20px;padding:14px 52px;cursor:pointer;
+  box-shadow:0 4px 20px rgba(0,0,0,.35);transition:transform .1s,box-shadow .1s;
+  font-family:inherit;
+}
+.btn-start:active{transform:scale(.96);box-shadow:0 2px 10px rgba(0,0,0,.3);}
+
+/* ══════════════════════════════════════════════
+   GAME SCREEN
+══════════════════════════════════════════════ */
+#game{flex-direction:column;background:#1a9e8e;}
+
+/* TOP BAR */
+#topbar{
+  height:56px;background:rgba(0,0,0,.22);display:flex;
+  align-items:center;padding:0 14px;gap:10px;flex-shrink:0;
+}
+.topbar-title{color:rgba(255,255,255,.55);font-size:13px;font-weight:bold;margin-right:4px;white-space:nowrap;}
+.pbadge{
+  display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);
+  border-radius:18px;padding:4px 10px 4px 5px;border:2px solid transparent;
+  transition:all .25s;flex-shrink:0;
+}
+.pbadge.active{background:rgba(255,255,255,.28);border-color:#fff;}
+.bdot{width:22px;height:22px;border-radius:50%;}
+.bname{color:#fff;font-size:12px;font-weight:bold;}
+.bpos{color:rgba(255,255,255,.65);font-size:10px;}
+
+/* MAIN AREA */
+#main{flex:1;display:flex;padding:10px;gap:10px;overflow:hidden;min-height:0;}
+
+/* ── BOARD ── */
+#board-wrap{position:relative;flex-shrink:0;}
+#board{
+  display:grid;
+  grid-template-columns:repeat(7,92px);
+  grid-template-rows:repeat(6,84px);
+  gap:3px;
+  position:relative;
+}
+
+.sq{
+  border-radius:10px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  position:relative;transition:transform .18s,box-shadow .18s;
+  overflow:hidden;
+}
+.sq-outer{background:#f4a8b8;border:2px solid #e0809a;}
+.sq-inner{background:#a8d6f4;border:2px solid #7ab8e0;}
+.sq-start{background:#f8c430;border:2px solid #d4a010;}
+.sq-finish{background:#f8c430;border:2px solid #d4a010;}
+.sq-blank{background:transparent;border:none;pointer-events:none;}
+.sq-goose{
+  background:rgba(255,255,255,.18);border:2px dashed rgba(255,255,255,.3);
+  border-radius:50%;pointer-events:none;display:flex;align-items:center;
+  justify-content:center;font-size:62px;
+}
+.sq-num{
+  position:absolute;top:2px;left:4px;
+  font-size:8px;font-weight:bold;color:rgba(0,0,0,.3);
+}
+.sq-verb{
+  font-size:11px;font-weight:bold;color:#333;text-align:center;
+  line-height:1.25;padding:2px 4px;
+}
+.sq-start .sq-verb,.sq-finish .sq-verb{color:#5a3000;font-size:13px;}
+.sq.lit{
+  transform:scale(1.06);
+  box-shadow:0 0 0 3px #fff, 0 4px 16px rgba(0,0,0,.35);
+  z-index:4;
+}
+
+/* tokens */
+.tklayer{
+  position:absolute;bottom:3px;right:3px;
+  display:flex;flex-wrap:wrap;gap:2px;width:36px;justify-content:flex-end;
+}
+.tk{
+  width:16px;height:16px;border-radius:50%;
+  border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);
+  font-size:8px;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:bold;
+}
+
+/* ── PANEL ── */
+#panel{
+  flex:1;display:flex;flex-direction:column;gap:8px;
+  overflow-y:auto;min-width:0;
+}
+#panel::-webkit-scrollbar{width:4px;}
+#panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:2px;}
+
+.pcrd{
+  background:rgba(255,255,255,.16);border-radius:14px;
+  padding:12px 14px;flex-shrink:0;
+  border:1px solid rgba(255,255,255,.2);
+}
+.pcrd-h{
+  color:rgba(255,255,255,.7);font-size:11px;text-transform:uppercase;
+  letter-spacing:1.2px;margin-bottom:8px;font-weight:bold;
+}
+
+/* current player */
+#cur-row{display:flex;align-items:center;gap:10px;}
+#cur-dot{width:38px;height:38px;border-radius:50%;border:3px solid #fff;flex-shrink:0;}
+#cur-name{color:#fff;font-size:18px;font-weight:bold;}
+#cur-square{color:rgba(255,255,255,.75);font-size:13px;margin-top:2px;}
+
+/* phase text */
+#phase-txt{color:#fff;font-size:14px;line-height:1.5;text-align:center;}
+
+/* number die */
+#numbtns{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;}
+.nbtn{
+  width:44px;height:44px;border-radius:10px;
+  background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.4);
+  color:#fff;font-size:18px;font-weight:bold;cursor:pointer;
+  transition:transform .1s,background .1s;font-family:inherit;
+}
+.nbtn:active{transform:scale(.88);background:rgba(255,255,255,.35);}
+
+/* person die */
+#pdie-wrap{display:flex;align-items:center;gap:14px;justify-content:center;padding:6px 0;}
+#pdie-btn{
+  width:78px;height:78px;border-radius:16px;
+  background:#fff;border:none;
+  font-size:40px;cursor:pointer;
+  box-shadow:0 4px 14px rgba(0,0,0,.3);
+  transition:transform .1s;display:flex;align-items:center;justify-content:center;
+}
+#pdie-btn:active{transform:scale(.88);}
+#pdie-btn.spin{animation:dieSpin .55s ease;}
+@keyframes dieSpin{
+  0%{transform:rotate(0) scale(1);}
+  30%{transform:rotate(-25deg) scale(.7);}
+  60%{transform:rotate(20deg) scale(.7);}
+  100%{transform:rotate(0) scale(1);}
+}
+#pdie-result{color:#fff;font-size:14px;font-weight:bold;line-height:1.5;text-align:center;}
+
+/* challenge */
+#chal-verb{font-size:34px;font-weight:bold;color:#fff;text-align:center;margin:4px 0;}
+#chal-form{font-size:14px;color:rgba(255,255,255,.9);text-align:center;margin-bottom:10px;line-height:1.4;}
+.cbtn{
+  display:block;width:100%;padding:10px;border-radius:12px;
+  border:2px solid rgba(255,255,255,.5);background:rgba(255,255,255,.2);
+  color:#fff;font-size:15px;cursor:pointer;font-family:inherit;font-weight:bold;
+  transition:background .15s;margin-bottom:6px;
+}
+.cbtn:active{background:rgba(255,255,255,.35);}
+#answer-box{
+  background:rgba(0,0,0,.25);border-radius:10px;padding:10px;
+  text-align:center;display:none;margin-bottom:8px;
+}
+#answer-txt{font-size:24px;font-weight:bold;color:#f8c430;}
+#answer-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;}
+#judge-row{display:none;gap:8px;}
+.jbtn{
+  flex:1;padding:10px;border:none;border-radius:12px;
+  font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;
+  transition:transform .1s;
+}
+.jbtn:active{transform:scale(.95);}
+#jcorrect{background:#4caf50;color:#fff;}
+#jwrong{background:#e53935;color:#fff;}
+
+/* autocorrection */
+#autocor-btn{
+  width:100%;padding:8px;background:rgba(255,255,255,.15);
+  border:2px solid rgba(255,255,255,.3);border-radius:10px;
+  color:#fff;font-size:13px;cursor:pointer;font-family:inherit;text-align:center;
+}
+#autocor-tbl-wrap{
+  display:none;max-height:180px;overflow-y:auto;
+  margin-top:8px;border-radius:8px;background:rgba(0,0,0,.2);
+}
+#autocor-tbl-wrap.open{display:block;}
+#autocor-tbl-wrap::-webkit-scrollbar{width:4px;}
+#autocor-tbl-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:2px;}
+.acor-tbl{width:100%;border-collapse:collapse;}
+.acor-tbl th,.acor-tbl td{
+  color:#fff;font-size:11px;padding:4px 8px;
+  border-bottom:1px solid rgba(255,255,255,.1);text-align:left;
+}
+.acor-tbl th{font-weight:bold;opacity:.7;background:rgba(0,0,0,.15);}
+.acor-tbl tr:last-child td{border-bottom:none;}
+
+/* QR panel */
+#qr-btn{
+  width:100%;padding:8px;background:rgba(255,255,255,.12);
+  border:2px solid rgba(255,255,255,.25);border-radius:10px;
+  color:rgba(255,255,255,.8);font-size:12px;cursor:pointer;font-family:inherit;text-align:center;
+}
+#qr-box{display:none;margin-top:8px;text-align:center;}
+#qr-box.open{display:block;}
+#qr-canvas{display:inline-block;background:#fff;padding:6px;border-radius:6px;}
+#qr-url-input{
+  width:100%;padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,.4);
+  background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-family:inherit;
+  margin-bottom:6px;
+}
+#qr-url-input::placeholder{color:rgba(255,255,255,.4);}
+#qr-url-input:focus{outline:none;border-color:#fff;}
+#qr-generate-btn{
+  padding:6px 14px;background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.4);
+  border-radius:8px;color:#fff;font-size:12px;cursor:pointer;font-family:inherit;
+}
+
+/* ── WIN OVERLAY ── */
+#win-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  display:none;align-items:center;justify-content:center;z-index:200;
+}
+#win-overlay.show{display:flex;}
+#win-card{
+  background:linear-gradient(135deg,#f8c430,#ff8c00);
+  border-radius:28px;padding:40px 56px;text-align:center;
+  box-shadow:0 10px 50px rgba(0,0,0,.5);
+}
+#win-card h1{font-size:52px;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.4);}
+#win-card p{font-size:22px;color:rgba(255,255,255,.92);margin:10px 0 22px;}
+#win-new-btn{
+  background:#fff;color:#b06000;font-weight:bold;font-size:17px;
+  border:none;border-radius:14px;padding:12px 30px;cursor:pointer;font-family:inherit;
+}
+
+/* ── HIDDEN CARDS ── */
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ SETUP ═══════════════════ -->
+<div id="setup" class="screen active">
+  <h1><span class="goose">🦢</span>Jeu de l'Oie<br>
+    <small style="font-size:17px;opacity:.85;font-weight:normal;">L'Impératif en français</small>
+  </h1>
+
+  <div class="card">
+    <h2>👥 Joueurs (2 à 4)</h2>
+    <div id="prows"></div>
+    <div class="ptoggle-row">
+      <button class="ptoggle" onclick="removePlayer()">− Joueur</button>
+      <button class="ptoggle" onclick="addPlayer()">+ Joueur</button>
+    </div>
+  </div>
+
+  <div class="card rules-card">
+    <b>📖 Comment jouer :</b><br>
+    Lance le <b>dé physique</b> (1-6) et entre le résultat → avance ton pion.<br>
+    Lance le <b>dé de personnes</b> 👤/👥 → conjugue le verbe de la case à l'impératif !<br>
+    ✅ Correct → reste sur la case. &nbsp; ❌ Faux → recule d'une case.
+  </div>
+
+  <button class="btn-start" onclick="startGame()">▶&nbsp;&nbsp;Commencer !</button>
+</div>
+
+<!-- ═══════════════════ GAME ═══════════════════ -->
+<div id="game" class="screen">
+  <div id="topbar">
+    <span class="topbar-title">🦢 Jeu de l'Oie</span>
+  </div>
+
+  <div id="main">
+    <div id="board-wrap">
+      <div id="board"></div>
+    </div>
+
+    <div id="panel">
+
+      <!-- Current player -->
+      <div class="pcrd">
+        <div class="pcrd-h">Tour de :</div>
+        <div id="cur-row">
+          <div id="cur-dot"></div>
+          <div>
+            <div id="cur-name">–</div>
+            <div id="cur-square">Case 0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase instruction -->
+      <div class="pcrd">
+        <div id="phase-txt">Lance le dé à 6 faces (physique), puis entre le résultat !</div>
+      </div>
+
+      <!-- Number die input -->
+      <div class="pcrd" id="numdie-card">
+        <div class="pcrd-h">🎲 Résultat du dé (physique)</div>
+        <div id="numbtns">
+          <button class="nbtn" onclick="movePlayer(1)">1</button>
+          <button class="nbtn" onclick="movePlayer(2)">2</button>
+          <button class="nbtn" onclick="movePlayer(3)">3</button>
+          <button class="nbtn" onclick="movePlayer(4)">4</button>
+          <button class="nbtn" onclick="movePlayer(5)">5</button>
+          <button class="nbtn" onclick="movePlayer(6)">6</button>
+        </div>
+      </div>
+
+      <!-- Person die -->
+      <div class="pcrd hidden" id="pdie-card">
+        <div class="pcrd-h">🎲 Dé de personnes</div>
+        <div id="pdie-wrap">
+          <button id="pdie-btn" onclick="rollPersonDie()">❓</button>
+          <div id="pdie-result">Appuie pour lancer !</div>
+        </div>
+      </div>
+
+      <!-- Challenge -->
+      <div class="pcrd hidden" id="chal-card">
+        <div class="pcrd-h">💬 Défi — formule un ordre !</div>
+        <div id="chal-verb">–</div>
+        <div id="chal-form">–</div>
+        <button class="cbtn" id="reveal-btn" onclick="revealAnswer()">👁&nbsp; Voir la réponse correcte</button>
+        <div id="answer-box">
+          <div id="answer-txt"></div>
+          <div id="answer-sub"></div>
+        </div>
+        <div id="judge-row" style="display:flex;">
+          <button class="jbtn" id="jcorrect" onclick="judgeAnswer(true)">✅ Correct !</button>
+          <button class="jbtn" id="jwrong" onclick="judgeAnswer(false)">❌ Faux</button>
+        </div>
+      </div>
+
+      <!-- Autocorrection -->
+      <div class="pcrd">
+        <button id="autocor-btn" onclick="toggleAutocor()">📋 Fiche d'autocorrection ▾</button>
+        <div id="autocor-tbl-wrap">
+          <table class="acor-tbl">
+            <thead>
+              <tr><th>Infinitif</th><th>👤 tu</th><th>👥 vous</th></tr>
+            </thead>
+            <tbody id="acor-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- QR Generator -->
+      <div class="pcrd">
+        <button id="qr-btn" onclick="toggleQR()">📱 Générer QR Code pour les élèves ▾</button>
+        <div id="qr-box">
+          <p style="color:rgba(255,255,255,.7);font-size:11px;margin-bottom:6px;">Colle l'URL où tu héberges ce fichier :</p>
+          <input id="qr-url-input" type="url" placeholder="https://ton-site.com/jeu.html">
+          <button id="qr-generate-btn" onclick="generateQR()">Générer QR</button>
+          <div id="qr-canvas" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+    </div><!-- /panel -->
+  </div><!-- /main -->
+</div><!-- /game -->
+
+<!-- Win overlay -->
+<div id="win-overlay">
+  <div id="win-card">
+    <h1>🎉 Bravo !</h1>
+    <p id="win-txt"></p>
+    <button id="win-new-btn" onclick="resetGame()">🔄 Nouvelle partie</button>
+  </div>
+</div>
+
+<!-- QR Code lib -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════
+const VERBS = {
+  ajouter: {tu:'ajoute',  vous:'ajoutez'},
+  aller:   {tu:'va',      vous:'allez'},
+  chanter: {tu:'chante',  vous:'chantez'},
+  chercher:{tu:'cherche', vous:'cherchez'},
+  couper:  {tu:'coupe',   vous:'coupez'},
+  dessiner:{tu:'dessine', vous:'dessinez'},
+  écouter: {tu:'écoute',  vous:'écoutez'},
+  faire:   {tu:'fais',    vous:'faites'},
+  fermer:  {tu:'ferme',   vous:'fermez'},
+  jouer:   {tu:'joue',    vous:'jouez'},
+  laver:   {tu:'lave',    vous:'lavez'},
+  manger:  {tu:'mange',   vous:'mangez'},
+  mettre:  {tu:'mets',    vous:'mettez'},
+  montrer: {tu:'montre',  vous:'montrez'},
+  parler:  {tu:'parle',   vous:'parlez'},
+  prendre: {tu:'prends',  vous:'prenez'},
+  raconter:{tu:'raconte', vous:'racontez'},
+  ranger:  {tu:'range',   vous:'rangez'},
+  regarder:{tu:'regarde', vous:'regardez'},
+  rester:  {tu:'reste',   vous:'restez'},
+  tourner: {tu:'tourne',  vous:'tournez'},
+  verser:  {tu:'verse',   vous:'versez'},
+};
+const VL = Object.keys(VERBS); // 22 verbs
+
+// Board path: [col, row] in 7-col × 6-row grid, 0-indexed
+// Outer ring clockwise (START=0 at bottom-left), then inner ring, then FINISH
+const PATH = [
+  // OUTER bottom L→R  (row 5)
+  [0,5],[1,5],[2,5],[3,5],[4,5],[5,5],[6,5],   // 0–6
+  // OUTER right B→T   (col 6)
+  [6,4],[6,3],[6,2],[6,1],[6,0],               // 7–11
+  // OUTER top R→L     (row 0)
+  [5,0],[4,0],[3,0],[2,0],[1,0],[0,0],          // 12–17
+  // OUTER left T→B    (col 0)
+  [0,1],[0,2],[0,3],[0,4],                      // 18–21
+  // INNER bottom L→R  (row 4)
+  [1,4],[2,4],[3,4],[4,4],[5,4],               // 22–26
+  // INNER right B→T   (col 5)
+  [5,3],[5,2],[5,1],                            // 27–29
+  // INNER top R→L     (row 1)
+  [4,1],[3,1],[2,1],[1,1],                      // 30–33
+  // INNER left T→B    (col 1)
+  [1,2],[1,3],                                  // 34–35
+  // FINISH
+  [2,3],                                        // 36
+];
+const NSQUARES = PATH.length; // 37
+
+function getVerb(i) {
+  if (i === 0)          return 'START';
+  if (i === NSQUARES-1) return 'ARRIVÉE';
+  return VL[(i - 1) % VL.length];
+}
+
+// ── Goose center area (empty decorative cells) ──
+// Cells not in PATH: [2,2],[3,2],[4,2],[3,3],[4,3] + center [3,2]
+const GOOSE_CELLS = new Set(['2,2','3,2','4,2','3,3','4,3']);
+
+const PCOLORS = ['#e84b4b','#3d85e0','#f5c518','#4caf50'];
+const PNAMES  = ['Joueur 1','Joueur 2','Joueur 3','Joueur 4'];
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let players = [], cur = 0, phase = 'roll-number', personRolled = null;
+
+// ══════════════════════════════════════════════════════════
+// SETUP LOGIC
+// ══════════════════════════════════════════════════════════
+function initPlayers() {
+  players = [
+    {name:'Joueur 1',pos:0,color:PCOLORS[0]},
+    {name:'Joueur 2',pos:0,color:PCOLORS[1]},
+  ];
+}
+initPlayers();
+renderSetup();
+
+function renderSetup() {
+  const el = document.getElementById('prows');
+  el.innerHTML = players.map((p,i) => `
+    <div class="prow">
+      <div class="pdot" style="background:${p.color}"></div>
+      <input class="pinput" type="text" value="${p.name}"
+             oninput="players[${i}].name=this.value||'${PNAMES[i]}'">
+    </div>`).join('');
+}
+function addPlayer()    { if(players.length<4){players.push({name:PNAMES[players.length],pos:0,color:PCOLORS[players.length]});renderSetup();} }
+function removePlayer() { if(players.length>2){players.pop();renderSetup();} }
+
+function startGame() {
+  cur = 0; phase = 'roll-number'; personRolled = null;
+  players.forEach(p => p.pos = 0);
+  buildBoard();
+  buildTopbar();
+  buildAutocor();
+  updateUI();
+  document.getElementById('setup').classList.remove('active');
+  document.getElementById('game').classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════
+// BOARD
+// ══════════════════════════════════════════════════════════
+function buildBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  // Index path squares by "col,row"
+  const sqMap = {};
+  PATH.forEach(([c,r], i) => sqMap[`${c},${r}`] = i);
+
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 7; c++) {
+      const key = `${c},${r}`;
+      const div = document.createElement('div');
+      div.style.gridColumn = c + 1;
+      div.style.gridRow    = r + 1;
+
+      if (key in sqMap) {
+        const i = sqMap[key];
+        const verb = getVerb(i);
+        const isEven = (i % 2 === 0);
+        let cls = isEven ? 'sq-outer' : 'sq-inner';
+        if (i === 0)           cls = 'sq-start';
+        if (i === NSQUARES-1)  cls = 'sq-finish';
+        div.className = `sq ${cls}`;
+        div.id = `sq${i}`;
+
+        const label = verb === 'START'   ? '🚀<br>Départ'
+                    : verb === 'ARRIVÉE' ? '🏆<br>Arrivée'
+                    : verb;
+        const fsize = verb.length > 8 ? '10px' : '12px';
+
+        div.innerHTML = `
+          <span class="sq-num">${i}</span>
+          <span class="sq-verb" style="font-size:${fsize}">${label}</span>
+          <div class="tklayer" id="tk${i}"></div>`;
+      } else if (GOOSE_CELLS.has(key)) {
+        // Goose center decoration
+        div.className = 'sq sq-goose';
+        if (c === 3 && r === 2) div.textContent = '🦢'; // only one cell shows the emoji
+      } else {
+        div.className = 'sq sq-blank';
+      }
+      board.appendChild(div);
+    }
+  }
+  renderTokens();
+}
+
+function renderTokens() {
+  document.querySelectorAll('.tklayer').forEach(el => el.innerHTML = '');
+  players.forEach((p, i) => {
+    const lay = document.getElementById(`tk${p.pos}`);
+    if (lay) {
+      const t = document.createElement('div');
+      t.className = 'tk';
+      t.style.background = p.color;
+      t.textContent = i + 1;
+      lay.appendChild(t);
+    }
+  });
+  // Highlight current player's square
+  document.querySelectorAll('.sq.lit').forEach(el => el.classList.remove('lit'));
+  const curSq = document.getElementById(`sq${players[cur].pos}`);
+  if (curSq) curSq.classList.add('lit');
+}
+
+// ══════════════════════════════════════════════════════════
+// TOP BAR
+// ══════════════════════════════════════════════════════════
+function buildTopbar() {
+  const tb = document.getElementById('topbar');
+  // Keep the title span, add badges
+  const existing = tb.querySelector('.topbar-title');
+  tb.innerHTML = '';
+  tb.appendChild(existing || (() => { const s = document.createElement('span'); s.className='topbar-title'; s.textContent='🦢 Jeu de l\'Oie'; return s; })());
+
+  players.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'pbadge';
+    d.id = `badge${i}`;
+    d.innerHTML = `
+      <div class="bdot" style="background:${p.color}"></div>
+      <div>
+        <div class="bname">${p.name}</div>
+        <div class="bpos" id="bpos${i}">Case 0</div>
+      </div>`;
+    tb.appendChild(d);
+  });
+  updateBadges();
+}
+
+function updateBadges() {
+  players.forEach((p, i) => {
+    const b = document.getElementById(`badge${i}`);
+    if (b) {
+      b.classList.toggle('active', i === cur);
+      const bp = document.getElementById(`bpos${i}`);
+      if (bp) bp.textContent = `Case ${p.pos}`;
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// AUTOCORRECTION
+// ══════════════════════════════════════════════════════════
+function buildAutocor() {
+  const tbody = document.getElementById('acor-body');
+  tbody.innerHTML = VL.map(v =>
+    `<tr><td>${v}</td><td>${VERBS[v].tu}</td><td>${VERBS[v].vous}</td></tr>`
+  ).join('');
+}
+function toggleAutocor() {
+  const el = document.getElementById('autocor-tbl-wrap');
+  el.classList.toggle('open');
+  const btn = document.getElementById('autocor-btn');
+  btn.textContent = el.classList.contains('open')
+    ? '📋 Fiche d\'autocorrection ▴'
+    : '📋 Fiche d\'autocorrection ▾';
+}
+
+// ══════════════════════════════════════════════════════════
+// QR CODE
+// ══════════════════════════════════════════════════════════
+function toggleQR() {
+  const el = document.getElementById('qr-box');
+  el.classList.toggle('open');
+}
+let qrInstance = null;
+function generateQR() {
+  const url = document.getElementById('qr-url-input').value.trim();
+  if (!url) { alert('Entre une URL d\'abord !'); return; }
+  const container = document.getElementById('qr-canvas');
+  container.innerHTML = '';
+  try {
+    qrInstance = new QRCode(container, {
+      text: url, width: 150, height: 150,
+      colorDark:'#000000', colorLight:'#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch(e) {
+    container.textContent = 'QRCode non disponible hors-ligne.';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// GAME LOGIC
+// ══════════════════════════════════════════════════════════
+function updateUI() {
+  const p = players[cur];
+  const verb = getVerb(p.pos);
+
+  // Current player header
+  document.getElementById('cur-dot').style.background = p.color;
+  document.getElementById('cur-name').textContent = p.name;
+  document.getElementById('cur-square').textContent =
+    (verb !== 'START' && verb !== 'ARRIVÉE') ? `Case ${p.pos} — ${verb}` : `Case ${p.pos}`;
+
+  // Show/hide cards
+  document.getElementById('numdie-card').classList.toggle('hidden', phase !== 'roll-number');
+  document.getElementById('pdie-card').classList.toggle('hidden',   phase !== 'roll-person');
+  document.getElementById('chal-card').classList.toggle('hidden',   phase !== 'challenge');
+
+  // Phase text
+  const ptxt = document.getElementById('phase-txt');
+  if (phase === 'roll-number') {
+    ptxt.textContent = `${p.name}, lance le dé physique (1-6) et entre le résultat !`;
+  } else if (phase === 'roll-person') {
+    ptxt.textContent = `Tu es sur "${verb}". Lance maintenant le dé de personnes !`;
+    // Reset person die
+    document.getElementById('pdie-btn').textContent = '❓';
+    document.getElementById('pdie-result').textContent = 'Appuie pour lancer !';
+    personRolled = null;
+  } else if (phase === 'challenge') {
+    ptxt.textContent = 'Dis la phrase à voix haute, puis vérifie !';
+    showChallenge();
+  }
+
+  updateBadges();
+  renderTokens();
+}
+
+function movePlayer(n) {
+  if (phase !== 'roll-number') return;
+  const p = players[cur];
+  p.pos = Math.min(p.pos + n, NSQUARES - 1);
+  renderTokens();
+
+  if (p.pos >= NSQUARES - 1) { showWin(p); return; }
+
+  const verb = getVerb(p.pos);
+  if (verb === 'START') { endTurn(); return; }
+
+  phase = 'roll-person';
+  updateUI();
+}
+
+function rollPersonDie() {
+  if (personRolled !== null) return;
+  const btn = document.getElementById('pdie-btn');
+  btn.classList.add('spin');
+  setTimeout(() => btn.classList.remove('spin'), 560);
+
+  // Animate flicker
+  let ticks = 0;
+  const faces = ['👤','👥'];
+  const flicker = setInterval(() => {
+    btn.textContent = faces[ticks % 2];
+    ticks++;
+    if (ticks > 8) {
+      clearInterval(flicker);
+      personRolled = Math.random() < 0.5 ? 'tu' : 'vous';
+      btn.textContent = personRolled === 'tu' ? '👤' : '👥';
+      document.getElementById('pdie-result').innerHTML =
+        personRolled === 'tu'
+          ? '<b>👤 Singulier</b><br><small style="opacity:.8">Conjugue avec « tu »</small>'
+          : '<b>👥 Pluriel</b><br><small style="opacity:.8">Conjugue avec « vous »</small>';
+      setTimeout(() => { phase = 'challenge'; updateUI(); }, 400);
+    }
+  }, 60);
+}
+
+function showChallenge() {
+  const verb = getVerb(players[cur].pos);
+  document.getElementById('chal-verb').textContent = verb;
+  document.getElementById('chal-form').innerHTML =
+    personRolled === 'tu'
+      ? '👤 <b>Singulier (tu)</b> — donne un ordre à <b>une</b> personne !'
+      : '👥 <b>Pluriel (vous)</b> — donne un ordre à <b>plusieurs</b> personnes !';
+
+  // Reset answer area
+  document.getElementById('answer-box').style.display = 'none';
+  document.getElementById('judge-row').style.display = 'none';
+  document.getElementById('reveal-btn').style.display = 'block';
+}
+
+function revealAnswer() {
+  const verb = getVerb(players[cur].pos);
+  const data = VERBS[verb];
+  if (!data) return;
+  const form = personRolled === 'tu' ? data.tu : data.vous;
+  const eg = personRolled === 'tu'
+    ? `Ex. : « ${form} la porte ! »`
+    : `Ex. : « ${form} vos cahiers ! »`;
+
+  document.getElementById('answer-txt').textContent = form + ' …!';
+  document.getElementById('answer-sub').textContent = eg;
+  document.getElementById('answer-box').style.display = 'block';
+  document.getElementById('judge-row').style.display = 'flex';
+  document.getElementById('reveal-btn').style.display = 'none';
+}
+
+function judgeAnswer(correct) {
+  if (!correct && players[cur].pos > 0) players[cur].pos--;
+  endTurn();
+}
+
+function endTurn() {
+  cur = (cur + 1) % players.length;
+  phase = 'roll-number';
+  personRolled = null;
+  updateUI();
+}
+
+function showWin(p) {
+  document.getElementById('win-txt').textContent = `${p.name} a gagné ! 🎊`;
+  document.getElementById('win-overlay').classList.add('show');
+}
+
+function resetGame() {
+  document.getElementById('win-overlay').classList.remove('show');
+  document.getElementById('game').classList.remove('active');
+  document.getElementById('setup').classList.add('active');
+  initPlayers();
+  renderSetup();
+}
+</script>
+</body>
+</html>
